@@ -18,13 +18,14 @@ import cn.iocoder.yudao.module.bpm.enums.task.BpmReasonEnum;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.candidate.BpmTaskCandidateInvoker;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.enums.BpmTaskCandidateStrategyEnum;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.BpmnModelUtils;
-import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.SimpleModelUtils;
 import cn.iocoder.yudao.module.bpm.service.task.BpmProcessInstanceCopyService;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.flowable.bpmn.model.*;
+import org.flowable.bpmn.model.BpmnModel;
+import org.flowable.bpmn.model.StartEvent;
+import org.flowable.bpmn.model.UserTask;
 import org.flowable.common.engine.impl.db.SuspensionState;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RepositoryService;
@@ -40,7 +41,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
@@ -84,7 +87,6 @@ public class BpmModelServiceImpl implements BpmModelService {
         if (StrUtil.isNotEmpty(name)) {
             modelQuery.modelNameLike("%" + name + "%");
         }
-        modelQuery.modelTenantId(FlowableUtils.getTenantId());
         return modelQuery.list();
     }
 
@@ -92,7 +94,6 @@ public class BpmModelServiceImpl implements BpmModelService {
     public Long getModelCountByCategory(String category) {
         return repositoryService.createModelQuery()
                 .modelCategory(category)
-                .modelTenantId(FlowableUtils.getTenantId())
                 .count();
     }
 
@@ -112,7 +113,6 @@ public class BpmModelServiceImpl implements BpmModelService {
         createReqVO.setSort(System.currentTimeMillis()); // 使用当前时间，作为排序
         Model model = repositoryService.newModel();
         BpmModelConvert.INSTANCE.copyToModel(model, createReqVO);
-        model.setTenantId(FlowableUtils.getTenantId());
 
         // 3. 保存模型
         saveModel(model, createReqVO);
@@ -135,7 +135,7 @@ public class BpmModelServiceImpl implements BpmModelService {
     /**
      * 保存模型的基本信息、流程图
      *
-     * @param model 模型
+     * @param model     模型
      * @param saveReqVO 保存信息
      */
     private void saveModel(Model model, BpmModelSaveReqVO saveReqVO) {
@@ -162,8 +162,7 @@ public class BpmModelServiceImpl implements BpmModelService {
     @Transactional(rollbackFor = Exception.class)
     public void updateModelSortBatch(Long userId, List<String> ids) {
         // 1.1 校验流程模型存在
-        List<Model> models = repositoryService.createModelQuery()
-                .modelTenantId(FlowableUtils.getTenantId()).list();
+        List<Model> models = repositoryService.createModelQuery().list();
         models.removeIf(model -> !ids.contains(model.getId()));
         if (ids.size() != models.size()) {
             throw exception(MODEL_NOT_EXISTS);
@@ -304,7 +303,7 @@ public class BpmModelServiceImpl implements BpmModelService {
         // 2.3 清理所有 Task
         List<Task> tasks = taskService.createTaskQuery()
                 .processDefinitionKey(model.getKey()).list();
-        tasks.forEach(task -> taskService.deleteTask(task.getId(),BpmReasonEnum.CANCEL_BY_PROCESS_CLEAN.getReason()));
+        tasks.forEach(task -> taskService.deleteTask(task.getId(), BpmReasonEnum.CANCEL_BY_PROCESS_CLEAN.getReason()));
     }
 
     @Override
@@ -423,7 +422,6 @@ public class BpmModelServiceImpl implements BpmModelService {
 
     private Model getModelByKey(String key) {
         return repositoryService.createModelQuery()
-                .modelTenantId(FlowableUtils.getTenantId())
                 .modelKey(key).singleResult();
     }
 

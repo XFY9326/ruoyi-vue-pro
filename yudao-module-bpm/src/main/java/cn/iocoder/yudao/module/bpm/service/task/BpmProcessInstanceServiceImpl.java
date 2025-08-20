@@ -298,7 +298,6 @@ public class BpmProcessInstanceServiceImpl implements BpmProcessInstanceService 
         // 1. 构建查询条件
         HistoricProcessInstanceQuery processInstanceQuery = historyService.createHistoricProcessInstanceQuery()
                 .includeProcessVariables()
-                .processInstanceTenantId(FlowableUtils.getTenantId())
                 .orderByProcessInstanceStartTime().desc();
         if (userId != null) { // 【我的流程】菜单时，需要传递该字段
             processInstanceQuery.startedBy(String.valueOf(userId));

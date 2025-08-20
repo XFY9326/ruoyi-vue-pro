@@ -215,7 +215,6 @@ public interface BpmTaskConvert {
         childTask.setTaskDefinitionId(parentTask.getTaskDefinitionId());
         childTask.setPriority(parentTask.getPriority());
         childTask.setCreateTime(new Date());
-        childTask.setTenantId(parentTask.getTenantId());
     }
 
 }

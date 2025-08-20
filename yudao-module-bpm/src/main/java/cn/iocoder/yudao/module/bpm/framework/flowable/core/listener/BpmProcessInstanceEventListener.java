@@ -39,15 +39,13 @@ public class BpmProcessInstanceEventListener extends AbstractFlowableEngineEvent
     @Override
     protected void processCreated(FlowableEngineEntityEvent event) {
         ProcessInstance processInstance = (ProcessInstance) event.getEntity();
-        FlowableUtils.execute(processInstance.getTenantId(),
-                () -> processInstanceService.processProcessInstanceCreated(processInstance));
+        processInstanceService.processProcessInstanceCreated(processInstance);
     }
 
     @Override
     protected void processCompleted(FlowableEngineEntityEvent event) {
         ProcessInstance processInstance = (ProcessInstance) event.getEntity();
-        FlowableUtils.execute(processInstance.getTenantId(),
-                () -> processInstanceService.processProcessInstanceCompleted(processInstance));
+        processInstanceService.processProcessInstanceCompleted(processInstance);
     }
 
     @Override
@@ -55,8 +53,7 @@ public class BpmProcessInstanceEventListener extends AbstractFlowableEngineEvent
         // 特殊情况：当跳转到 EndEvent 流程实例未结束, 会执行 deleteProcessInstance 方法
         ProcessInstance processInstance = processInstanceService.getProcessInstance(event.getProcessInstanceId());
         if (processInstance != null) {
-            FlowableUtils.execute(processInstance.getTenantId(),
-                    () -> processInstanceService.processProcessInstanceCompleted(processInstance));
+            processInstanceService.processProcessInstanceCompleted(processInstance);
         }
     }
 

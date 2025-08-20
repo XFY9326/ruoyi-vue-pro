@@ -196,7 +196,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
     /**
      * 获得用户指定 processInstanceId 流程编号下的首个“待办”（未审批、且可审核）的任务
      *
-     * @param userId 用户编号
+     * @param userId            用户编号
      * @param processInstanceId 流程编号
      * @return 任务
      */
@@ -257,7 +257,6 @@ public class BpmTaskServiceImpl implements BpmTaskService {
     public PageResult<HistoricTaskInstance> getTaskPage(Long userId, BpmTaskPageReqVO pageVO) {
         HistoricTaskInstanceQuery taskQuery = historyService.createHistoricTaskInstanceQuery()
                 .includeTaskLocalVariables()
-                .taskTenantId(FlowableUtils.getTenantId())
                 .orderByHistoricTaskInstanceEndTime().desc(); // 审批时间倒序
         if (StrUtil.isNotBlank(pageVO.getName())) {
             taskQuery.taskNameLike("%" + pageVO.getName() + "%");
@@ -599,15 +598,15 @@ public class BpmTaskServiceImpl implements BpmTaskService {
 
     /**
      * 校验选择的下一个节点的审批人，是否合法
-     *
+     * <p>
      * 1. 是否有漏选：没有选择审批人
      * 2. 是否有多选：非下一个节点
      *
      * @param taskDefinitionKey 当前任务节点标识
-     * @param variables 流程变量
-     * @param bpmnModel 流程模型
-     * @param nextAssignees 下一个节点审批人集合（参数）
-     * @param processInstance 流程实例
+     * @param variables         流程变量
+     * @param bpmnModel         流程模型
+     * @param nextAssignees     下一个节点审批人集合（参数）
+     * @param processInstance   流程实例
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> validateAndSetNextAssignees(String taskDefinitionKey, Map<String, Object> variables, BpmnModel bpmnModel,
@@ -659,7 +658,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                     approveUserSelectAssignees = new HashMap<>();
                 }
                 approveUserSelectAssignees.put(nextFlowNode.getId(), assignees);
-                Map<String,List<Long>> existingApproveUserSelectAssignees = (Map<String,List<Long>>) variables.get(
+                Map<String, List<Long>> existingApproveUserSelectAssignees = (Map<String, List<Long>>) variables.get(
                         BpmnVariableConstants.PROCESS_INSTANCE_VARIABLE_APPROVE_USER_SELECT_ASSIGNEES);
                 if (CollUtil.isNotEmpty(existingApproveUserSelectAssignees)) {
                     approveUserSelectAssignees.putAll(existingApproveUserSelectAssignees);
@@ -1223,7 +1222,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
         }
 
         // 2. 任务前置通知
-        if (ObjUtil.isNotNull(processDefinitionInfo.getTaskBeforeTriggerSetting())){
+        if (ObjUtil.isNotNull(processDefinitionInfo.getTaskBeforeTriggerSetting())) {
             BpmModelMetaInfoVO.HttpRequestSetting setting = processDefinitionInfo.getTaskBeforeTriggerSetting();
             BpmHttpRequestUtils.executeBpmHttpRequest(processInstance,
                     setting.getUrl(), setting.getHeader(), setting.getBody(), true, setting.getResponse());
@@ -1350,7 +1349,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                             .taskVariableValueEquals(BpmnVariableConstants.TASK_VARIABLE_STATUS, BpmTaskStatusEnum.APPROVE.getStatus())
                             .finished();
                     if (BpmAutoApproveTypeEnum.APPROVE_ALL.getType().equals(processDefinitionInfo.getAutoApprovalType())
-                        && sameAssigneeQuery.count() > 0) {
+                            && sameAssigneeQuery.count() > 0) {
                         getSelf().approveTask(Long.valueOf(task.getAssignee()), new BpmTaskApproveReqVO().setId(task.getId())
                                 .setReason(BpmAutoApproveTypeEnum.APPROVE_ALL.getName()));
                         return;
@@ -1362,7 +1361,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                             return;
                         }
                         List<String> sourceTaskIds = convertList(BpmnModelUtils.getElementIncomingFlows( // 获取所有上一个节点
-                                BpmnModelUtils.getFlowElementById(bpmnModel, task.getTaskDefinitionKey())),
+                                        BpmnModelUtils.getFlowElementById(bpmnModel, task.getTaskDefinitionKey())),
                                 SequenceFlow::getSourceRef);
                         if (sameAssigneeQuery.taskDefinitionKeys(sourceTaskIds).count() > 0) {
                             getSelf().approveTask(Long.valueOf(task.getAssignee()), new BpmTaskApproveReqVO().setId(task.getId())
@@ -1387,7 +1386,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                         PROCESS_INSTANCE_VARIABLE_SKIP_START_USER_NODE, String.class));
                 if (userTaskElement.getId().equals(START_USER_NODE_ID)
                         && (skipStartUserNodeFlag == null // 目的：一般是“主流程”，发起人节点，自动通过审核
-                            || BooleanUtil.isTrue(skipStartUserNodeFlag)) // 目的：一般是“子流程”，发起人节点，按配置自动通过审核
+                        || BooleanUtil.isTrue(skipStartUserNodeFlag)) // 目的：一般是“子流程”，发起人节点，按配置自动通过审核
                         && ObjUtil.notEqual(returnTaskFlag, Boolean.TRUE)) {
                     getSelf().approveTask(Long.valueOf(task.getAssignee()), new BpmTaskApproveReqVO().setId(task.getId())
                             .setReason(BpmReasonEnum.ASSIGN_START_USER_APPROVE_WHEN_SKIP_START_USER_NODE.getReason()));
@@ -1431,11 +1430,8 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                         }
                     }
                 }
-                // 注意：需要基于 instance 设置租户编号，避免 Flowable 内部异步时，丢失租户编号
-                FlowableUtils.execute(processInstance.getTenantId(), () -> {
-                    AdminUserRespDTO startUser = adminUserApi.getUser(Long.valueOf(processInstance.getStartUserId()));
-                    messageService.sendMessageWhenTaskAssigned(BpmTaskConvert.INSTANCE.convert(processInstance, startUser, task));
-                });
+                AdminUserRespDTO startUser = adminUserApi.getUser(Long.valueOf(processInstance.getStartUserId()));
+                messageService.sendMessageWhenTaskAssigned(BpmTaskConvert.INSTANCE.convert(processInstance, startUser, task));
             }
 
         });
@@ -1456,7 +1452,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
         }
 
         // 任务后置通知
-        if (ObjUtil.isNotNull(processDefinitionInfo.getTaskAfterTriggerSetting())){
+        if (ObjUtil.isNotNull(processDefinitionInfo.getTaskAfterTriggerSetting())) {
             BpmModelMetaInfoVO.HttpRequestSetting setting = processDefinitionInfo.getTaskAfterTriggerSetting();
             BpmHttpRequestUtils.executeBpmHttpRequest(processInstance,
                     setting.getUrl(), setting.getHeader(), setting.getBody(), true, setting.getResponse());
@@ -1478,7 +1474,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
             return;
         }
 
-        taskList.forEach(task -> FlowableUtils.execute(task.getTenantId(), () -> {
+        taskList.forEach(task -> {
             // 情况一：自动提醒
             if (Objects.equals(handlerType, BpmUserTaskTimeoutHandlerTypeEnum.REMINDER.getType())) {
                 messageService.sendMessageWhenTaskTimeout(new BpmMessageSendWhenTaskTimeoutReqDTO()
@@ -1499,7 +1495,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                 rejectTask(Long.parseLong(task.getAssignee()),
                         new BpmTaskRejectReqVO().setId(task.getId()).setReason(BpmReasonEnum.REJECT_TASK.getReason()));
             }
-        }));
+        });
     }
 
     @Override
@@ -1508,8 +1504,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
         List<ActivityInstance> activityInstances = runtimeService.createActivityInstanceQuery()
                 .processInstanceId(processInstanceId)
                 .activityId(taskDefineKey).list();
-        activityInstances.forEach(activityInstance -> FlowableUtils.execute(activityInstance.getTenantId(),
-                () -> moveTaskToEnd(activityInstance.getCalledProcessInstanceId(), BpmReasonEnum.TIMEOUT_APPROVE.getReason())));
+        activityInstances.forEach(activityInstance -> moveTaskToEnd(activityInstance.getCalledProcessInstanceId(), BpmReasonEnum.TIMEOUT_APPROVE.getReason()));
     }
 
     @Override
@@ -1524,8 +1519,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
         }
 
         // 若存在直接触发接收任务，执行后续节点
-        FlowableUtils.execute(execution.getTenantId(),
-                () -> runtimeService.trigger(execution.getId()));
+        runtimeService.trigger(execution.getId());
     }
 
     /**

@@ -1,11 +1,10 @@
 package cn.iocoder.yudao.module.system.controller.admin.user.vo.profile;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import org.hibernate.validator.constraints.Length;
-
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 
 
@@ -23,7 +22,7 @@ public class UserProfileUpdateReqVO {
     private String email;
 
     @Schema(description = "手机号码", example = "15601691300")
-    @Length(min = 11, max = 11, message = "手机号长度必须 11 位")
+    @Pattern(regexp = "^$|^\\d{11}$", message = "手机号必须为11位数字或为空")
     private String mobile;
 
     @Schema(description = "用户性别，参见 SexEnum 枚举类", example = "1")

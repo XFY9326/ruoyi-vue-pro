@@ -11,7 +11,6 @@ import cn.iocoder.yudao.module.bpm.dal.dataobject.definition.BpmFormDO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.definition.BpmProcessDefinitionInfoDO;
 import cn.iocoder.yudao.module.bpm.dal.mysql.definition.BpmProcessDefinitionInfoMapper;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.enums.BpmnModelConstants;
-import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import jakarta.annotation.Resource;
@@ -84,7 +83,6 @@ public class BpmProcessDefinitionServiceImpl implements BpmProcessDefinitionServ
     @Override
     public ProcessDefinition getActiveProcessDefinition(String key) {
         return repositoryService.createProcessDefinitionQuery()
-                .processDefinitionTenantId(FlowableUtils.getTenantId())
                 .processDefinitionKey(key).active().singleResult();
     }
 
@@ -138,7 +136,6 @@ public class BpmProcessDefinitionServiceImpl implements BpmProcessDefinitionServ
         Deployment deploy = repositoryService.createDeployment()
                 .key(model.getKey()).name(model.getName()).category(model.getCategory())
                 .addBytes(model.getKey() + BpmnModelConstants.BPMN_FILE_SUFFIX, bpmnBytes)
-                .tenantId(FlowableUtils.getTenantId())
                 .disableSchemaValidation() // 禁用 XML Schema 验证，因为有自定义的属性
                 .deploy();
 
@@ -216,7 +213,6 @@ public class BpmProcessDefinitionServiceImpl implements BpmProcessDefinitionServ
     @Override
     public PageResult<ProcessDefinition> getProcessDefinitionPage(BpmProcessDefinitionPageReqVO pageVO) {
         ProcessDefinitionQuery query = repositoryService.createProcessDefinitionQuery();
-        query.processDefinitionTenantId(FlowableUtils.getTenantId());
         if (StrUtil.isNotBlank(pageVO.getKey())) {
             query.processDefinitionKey(pageVO.getKey());
         }
@@ -240,7 +236,6 @@ public class BpmProcessDefinitionServiceImpl implements BpmProcessDefinitionServ
             query.active();
         }
         // 执行查询
-        query.processDefinitionTenantId(FlowableUtils.getTenantId());
         return query.list();
     }
 

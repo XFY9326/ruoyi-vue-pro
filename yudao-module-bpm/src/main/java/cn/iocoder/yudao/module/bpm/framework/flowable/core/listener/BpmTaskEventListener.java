@@ -61,19 +61,19 @@ public class BpmTaskEventListener extends AbstractFlowableEngineEventListener {
     @Override
     protected void taskCreated(FlowableEngineEntityEvent event) {
         Task entity = (Task) event.getEntity();
-        FlowableUtils.execute(entity.getTenantId(), () -> taskService.processTaskCreated(entity));
+        taskService.processTaskCreated(entity);
     }
 
     @Override
     protected void taskAssigned(FlowableEngineEntityEvent event) {
         Task entity = (Task) event.getEntity();
-        FlowableUtils.execute(entity.getTenantId(), () -> taskService.processTaskAssigned(entity));
+        taskService.processTaskAssigned(entity);
     }
 
     @Override
     protected void taskCompleted(FlowableEngineEntityEvent event) {
         Task entity = (Task) event.getEntity();
-        FlowableUtils.execute(entity.getTenantId(), () -> taskService.processTaskCompleted(entity));
+        taskService.processTaskCompleted(entity);
     }
 
     @Override

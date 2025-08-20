@@ -5,20 +5,16 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import cn.iocoder.yudao.framework.common.core.KeyValue;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
-import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
-import cn.iocoder.yudao.framework.tenant.core.util.TenantUtils;
 import cn.iocoder.yudao.module.bpm.controller.admin.definition.vo.form.BpmFormFieldVO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.definition.BpmProcessDefinitionInfoDO;
 import cn.iocoder.yudao.module.bpm.enums.definition.BpmModelFormTypeEnum;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.enums.BpmnVariableConstants;
-import lombok.SneakyThrows;
 import org.flowable.common.engine.api.delegate.Expression;
 import org.flowable.common.engine.api.variable.VariableContainer;
 import org.flowable.common.engine.impl.el.ExpressionManager;
 import org.flowable.common.engine.impl.identity.Authentication;
 import org.flowable.common.engine.impl.variable.MapDelegateVariableContainer;
 import org.flowable.engine.ManagementService;
-import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.flowable.engine.impl.util.CommandContextUtil;
@@ -28,7 +24,6 @@ import org.flowable.task.api.TaskInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -59,32 +54,6 @@ public class FlowableUtils {
             throw new RuntimeException(e);
         } finally {
             clearAuthenticatedUserId();
-        }
-    }
-
-    public static String getTenantId() {
-        Long tenantId = TenantContextHolder.getTenantId();
-        return tenantId != null ? String.valueOf(tenantId) : ProcessEngineConfiguration.NO_TENANT_ID;
-    }
-
-    public static void execute(String tenantIdStr, Runnable runnable) {
-        if (ObjectUtil.isEmpty(tenantIdStr)
-                || Objects.equals(tenantIdStr, ProcessEngineConfiguration.NO_TENANT_ID)) {
-            runnable.run();
-        } else {
-            Long tenantId = Long.valueOf(tenantIdStr);
-            TenantUtils.execute(tenantId, runnable);
-        }
-    }
-
-    @SneakyThrows
-    public static <V> V execute(String tenantIdStr, Callable<V> callable) {
-        if (ObjectUtil.isEmpty(tenantIdStr)
-                || Objects.equals(tenantIdStr, ProcessEngineConfiguration.NO_TENANT_ID)) {
-            return callable.call();
-        } else {
-            Long tenantId = Long.valueOf(tenantIdStr);
-            return TenantUtils.execute(tenantId, callable);
         }
     }
 
@@ -164,7 +133,7 @@ public class FlowableUtils {
 
     /**
      * 过滤流程实例的表单
-     *
+     * <p>
      * 为什么要过滤？目前使用 processVariables 存储所有流程实例的拓展字段，需要过滤掉一部分的系统字段，从而实现表单的展示
      *
      * @param processVariables 流程实例的 variables
@@ -227,7 +196,7 @@ public class FlowableUtils {
 
     /**
      * 获得流程实例的摘要
-     *
+     * <p>
      * 仅有 {@link BpmModelFormTypeEnum#getType()} 表单，才有摘要。
      * 原因是，只有它才有表单项的配置，从而可以根据配置，展示摘要。
      *
@@ -319,7 +288,7 @@ public class FlowableUtils {
 
     /**
      * 过滤任务的表单
-     *
+     * <p>
      * 为什么要过滤？目前使用 taskLocalVariables 存储所有任务的拓展字段，需要过滤掉一部分的系统字段，从而实现表单的展示
      *
      * @param taskLocalVariables 任务的 taskLocalVariables
